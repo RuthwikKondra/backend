@@ -9,13 +9,39 @@ pipeline {
     parameters {
         choice(name: 'action', choices: ['Apply', 'Destroy'], description: 'Pick something')
     }
+
+    enviornment {
+        def appversion = ''
+    }
+    stages
+    {
+        stage('read the version'){
+            steps{
+                script
+                {
+                    def packageJson =readJson file: 'package.json'
+                    def appVersion = packageJson.version
+                    echo "application version: $appversion"
+                }
+            }
+        }
+    }
     stages {
         stage('Install Dependencies') {
             steps {
                sh """
                 npm install
                 ls -ltr
+                echo "application version: $appversion"
                """
+            }
+        }
+        stage('Build'){
+            steps{
+                sh """
+                zip -r backend-${appVersion}.zip * -x jenkinsfile -x backend-${appVersion}.zip
+                ls -ltr
+                """
             }
         }
     }
