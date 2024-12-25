@@ -6,9 +6,6 @@ pipeline {
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
-    parameters {
-        choice(name: 'action', choices: ['Apply', 'Destroy'], description: 'Pick something')
-    }
 
     enviornment {
         def appVersion = ''
@@ -39,7 +36,7 @@ pipeline {
         stage('Build'){
             steps{
                 sh """
-                zip -r backend-${appVersion}.zip * -x jenkinsfile -x backend-${appVersion}.zip
+                zip -q -r backend-${appVersion}.zip * -x jenkinsfile -x backend-${appVersion}.zip
                 ls -ltr
                 """
             }
