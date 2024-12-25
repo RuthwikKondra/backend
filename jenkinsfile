@@ -2,52 +2,53 @@ pipeline {
     agent {
         label 'Agent-1'
     }
+
     options {
-        timeout(time: 30, unit: 'MINUTES')
-        disableConcurrentBuilds()
-        ansiColor('xterm')
+        timeout(time: 30, unit: 'MINUTES')  // Timeout of 30 minutes
+        disableConcurrentBuilds()          // Prevent concurrent builds
+        ansiColor('xterm')                 // Enable ANSI colors
     }
 
     environment {
-        def appVersion = ''
+        APP_VERSION = ''  // Declare environment variable (cannot use 'def' here)
     }
-    stages
-    {
-        stage('read the version'){
-            steps{
-                script
-                {
-                    def packageJson =readJson file: 'package.json'
-                     appVersion = packageJson.version
-                    echo "application version: $appVersion"
+
+    stages {
+        stage('Read the Version') {
+            steps {
+                script {
+                    // Ensure the Pipeline Utility Steps plugin is installed
+                    def packageJson = readJSON file: 'package.json'  // Corrected from 'readJson'
+                    env.APP_VERSION = packageJson.version            // Use 'env.' for environment variable
+                    echo "Application version: ${env.APP_VERSION}"   // Proper variable usage
                 }
             }
         }
+
         stage('Install Dependencies') {
             steps {
-               sh """
-                npm install
-                ls -ltr
-                echo "application version: $appVersion"
-               """
+                sh """
+                    npm install
+                    ls -ltr
+                    echo "Application version: ${env.APP_VERSION}"  // Use 'env.' for referencing variables
+                """
             }
         }
-        stage('Build'){
-            steps{
+
+        stage('Build') {
+            steps {
                 sh """
-                zip -q -r backend-${appVersion}.zip * -x jenkinsfile -x backend-${appVersion}.zip
-                ls -ltr
+                    zip -q -r backend-${env.APP_VERSION}.zip * -x jenkinsfile -x backend-${env.APP_VERSION}.zip
+                    ls -ltr
                 """
             }
         }
     }
 
-        
- 
     post { 
         always { 
             echo 'I will always say Hello again!'
-            deleteDir()
+            deleteDir()  // Clean up workspace after build
         }
         success { 
             echo 'I will run when pipeline is success'
