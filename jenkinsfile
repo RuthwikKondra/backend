@@ -11,6 +11,7 @@ pipeline {
 
     environment {
         APP_VERSION = ''  // Declare environment variable (cannot use 'def' here)
+        nexusUrl = '107.21.66.31:8081'
     }
 
     stages {
@@ -52,13 +53,13 @@ pipeline {
                         protocol: 'http',
                         nexusUrl: "${nexusUrl}",
                         groupId: 'com.expense',
-                        version: "${appVersion}",
+                        version: "${APP_VERSION}",
                         repository: "backend",
                         credentialsId: 'nexus-auth',
                         artifacts: [
                             [artifactId: "backend" ,
                             classifier: '',
-                            file: "backend-" + "${appVersion}" + '.zip',
+                            file: "backend-" + "${APP_VERSION}" + '.zip',
                             type: 'zip']
                         ]
                     )
