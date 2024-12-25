@@ -11,7 +11,7 @@ pipeline {
 
     environment {
         APP_VERSION = ''  // Declare environment variable (cannot use 'def' here)
-        nexusUrl = 'nexus.devops-practice.cloud:8081'
+        nexusUrl = '107.21.66.31:8081'
     }
 
     stages {
