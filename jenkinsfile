@@ -4,24 +4,23 @@ pipeline {
     }
 
     options {
-        timeout(time: 30, unit: 'MINUTES')  // Timeout of 30 minutes
-        disableConcurrentBuilds()          // Prevent concurrent builds
-        ansiColor('xterm')                 // Enable ANSI colors
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        ansiColor('xterm')
     }
 
     environment {
-        APP_VERSION = ''  // Declare environment variable (cannot use 'def' here)
-        nexusUrl = '107.21.66.31:8081'
+        nexusUrl = '107.21.66.31:8081' // Nexus server URL
     }
 
     stages {
         stage('Read the Version') {
             steps {
                 script {
-                    // Ensure the Pipeline Utility Steps plugin is installed
-                    def packageJson = readJSON file: 'package.json'  // Corrected from 'readJson'
-                    env.APP_VERSION = packageJson.version            // Use 'env.' for environment variable
-                    echo "Application version: ${env.APP_VERSION}"   // Proper variable usage
+                    // Read version dynamically from package.json
+                    def packageJson = readJSON file: 'package.json'
+                    APP_VERSION = packageJson.version // Use local Groovy variable for dynamic assignment
+                    echo "Application version: ${APP_VERSION}" // Log the version
                 }
             }
         }
@@ -31,36 +30,42 @@ pipeline {
                 sh """
                     npm install
                     ls -ltr
-                    echo "Application version: ${env.APP_VERSION}"  // Use 'env.' for referencing variables
+                    echo "Application version: ${APP_VERSION}" // Use Groovy variable
                 """
             }
         }
 
         stage('Build') {
             steps {
-                sh """
-                    zip -q -r backend-${env.APP_VERSION}.zip * -x jenkinsfile -x backend-${env.APP_VERSION}.zip
-                    ls -ltr
-                """
+                script {
+                    // Use APP_VERSION set earlier to build zip file
+                    sh """
+                        zip -q -r backend-${APP_VERSION}.zip * -x jenkinsfile -x backend-${APP_VERSION}.zip
+                        ls -ltr
+                    """
+                }
             }
         }
 
         stage('Nexus Artifact Upload') {
             steps {
-                script{
+                script {
+                    // Ensure version and Nexus connection are used correctly
                     nexusArtifactUploader(
                         nexusVersion: 'nexus3',
                         protocol: 'http',
-                        nexusUrl: "${env.nexusUrl}",
+                        nexusUrl: "${env.nexusUrl}", // Fixed reference to env variable
                         groupId: 'com.expense',
-                        version: "${APP_VERSION}",
+                        version: "${APP_VERSION}",  // Fixed version reference from Groovy variable
                         repository: "backend",
-                        credentialsId: 'nexus-auth',
+                        credentialsId: 'nexus-auth', // Verify Jenkins credentials
                         artifacts: [
-                            [artifactId: "backend" ,
-                            classifier: '',
-                            file: "backend-" + "${APP_VERSION}" + '.zip',
-                            type: 'zip']
+                            [
+                                artifactId: "backend",
+                                classifier: '',
+                                file: "backend-${APP_VERSION}.zip", // Correct artifact name
+                                type: 'zip'
+                            ]
                         ]
                     )
                 }
@@ -70,14 +75,14 @@ pipeline {
 
     post { 
         always { 
-            echo 'I will always say Hello again!'
-            deleteDir()  // Clean up workspace after build
+            echo 'Cleaning up workspace...'
+            deleteDir() // Cleanup
         }
         success { 
-            echo 'I will run when pipeline is success'
+            echo 'Pipeline completed successfully!'
         }
         failure { 
-            echo 'I will run when pipeline is failure'
+            echo 'Pipeline failed!'
         }
     }
 }
